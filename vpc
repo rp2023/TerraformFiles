@@ -1,0 +1,52 @@
+#Step 1: Create VPC
+resource "aws_vpc" "Myvpc" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "MyTerraformvpc"
+  }
+}
+
+#step 2: create public subnet
+resource "aws_subnet" "publicsubnet" {
+  vpc_id     = aws_vpc.Myvpc.id
+  cidr_block = "10.0.1.0/24"
+}
+
+#step 3: create privet subnet
+
+resource "aws_subnet" "privatesubnet" {
+  vpc_id     = aws_vpc.Myvpc.id
+  cidr_block = "10.0.2.0/24"
+}
+#step 4: create IGW
+
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.Myvpc.id
+}
+
+#step 5: Route table
+resource "aws_route_table" "PublicRT" {
+  vpc_id = aws_vpc.Myvpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+}
+
+#step 6 associate route table with public subnet
+resource "aws_route_table_association" "PublicRTassociation" {
+  subnet_id      = aws_subnet.publicsubnet.id
+  route_table_id = aws_route_table.PublicRT.id
+}
+#step 7 Create resource in public subnet
+  resource "aws_instance" "Myserver" {
+    ami = "ami-0b09627181c8d5778"
+    Key_name = "Pythonkey"
+    instance_type = "t2.micro"
+    subnet_id = aws_subnet.publicsubnet.id
+    security_groups = ["default"]
+    tags = {
+         Name = "Myserver"
+    }
+  }
+    
